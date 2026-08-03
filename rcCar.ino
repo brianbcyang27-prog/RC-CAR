@@ -202,11 +202,11 @@ const char webpage[] PROGMEM = R"=====(
     <h1>ESP8266 RC CAR</h1>
     
     <div id="status">
-      Connected
+      已連接
     </div>
     
     <div class="info">
-      Speed:
+      速度:
       <span id="speed">0</span>%
     </div>
     
