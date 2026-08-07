@@ -31,8 +31,8 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
-const char* ssid = "RC_CAR";
-const char* password = "12345678";
+String ssid;
+String password;
 
 ESP8266WebServer server(80);
 
@@ -54,92 +54,77 @@ unsigned long lastCommand = 0;
 const int timeout = 500;
 
 
-void setMotor(int left, int right)
-{
+void setMotor(int left, int right) {
   left = constrain(left, -1023, 1023);
   right = constrain(right, -1023, 1023);
 
-  if(left > 0)
-  {
+  if (left > 0) {
     analogWrite(AIN1, left);
     digitalWrite(AIN2, LOW);
-  }
-  else if(left < 0)
-  {
+  } else if (left < 0) {
     digitalWrite(AIN1, LOW);
     analogWrite(AIN2, -left);
-  }
-  else
-  {
+  } else {
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, LOW);
   }
 
-  if(right > 0)
-  {
+  if (right > 0) {
     analogWrite(BIN1, right);
     digitalWrite(BIN2, LOW);
-  }
-  else if(right < 0)
-  {
+  } else if (right < 0) {
     digitalWrite(BIN1, LOW);
     analogWrite(BIN2, -right);
-  }
-  else
-  {
+  } else {
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, LOW);
   }
 }
 
 
-void stopCar()
-{
+void stopCar() {
   targetLeft = 0;
   targetRight = 0;
 }
 
 
-void updateMotor()
-{
-  if(currentLeft < targetLeft)
+void updateMotor() {
+  if (currentLeft < targetLeft)
     currentLeft += acceleration;
 
-  if(currentLeft > targetLeft)
+  if (currentLeft > targetLeft)
     currentLeft -= acceleration;
 
-  if(currentRight < targetRight)
+  if (currentRight < targetRight)
     currentRight += acceleration;
 
-  if(currentRight > targetRight)
+  if (currentRight > targetRight)
     currentRight -= acceleration;
 
-  currentLeft = constrain(currentLeft,-1023,1023);
-  currentRight = constrain(currentRight,-1023,1023);
+  currentLeft = constrain(currentLeft, -1023, 1023);
+  currentRight = constrain(currentRight, -1023, 1023);
 
-  setMotor(currentLeft,currentRight);
+  setMotor(currentLeft, currentRight);
 }
 
 
-void moveCar()
-{
-  if(server.hasArg("x") && server.hasArg("y"))
-  {
+void moveCar() {
+  if (server.hasArg("x") && server.hasArg("y")) {
     int x = server.arg("x").toInt();
     int y = server.arg("y").toInt();
 
-    int forward = map(y,-100,100,-1023,1023);
-    int turn = map(x,-100,100,-500,500);
+    int forward = map(y, -100, 100, -1023, 1023);
+    int turn = map(x, -100, 100, -500, 500);
 
     targetLeft = forward - turn;
     targetRight = forward + turn;
 
-    targetLeft = constrain(targetLeft,-maxSpeed,maxSpeed);
-    targetRight = constrain(targetRight,-maxSpeed,maxSpeed);
+    targetLeft = constrain(targetLeft, -maxSpeed, maxSpeed);
+    targetRight = constrain(targetRight, -maxSpeed, maxSpeed);
 
     lastCommand = millis();
 
-    server.send(200,"text/plain","OK");
+    server.send(200, "text/plain", "OK");
   }
 }
 
@@ -149,7 +134,6 @@ const char webpage[] PROGMEM = R"=====(
 
 <!DOCTYPE html>
 <html>
-
   <head>
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <title>RC CAR</title>
@@ -327,53 +311,67 @@ const char webpage[] PROGMEM = R"=====(
 )=====";
 
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-  
-  pinMode(AIN1,OUTPUT);
-  pinMode(AIN2,OUTPUT);
-  pinMode(BIN1,OUTPUT);
-  pinMode(BIN2,OUTPUT);
-  pinMode(STBY,OUTPUT);
-  
-  digitalWrite(STBY,HIGH);
-  
+
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(BIN1, OUTPUT);
+  pinMode(BIN2, OUTPUT);
+  pinMode(STBY, OUTPUT);
+
+  digitalWrite(STBY, HIGH);
+
   stopCar();
-  
+
+  Serial.println("請輸入網路名稱（不可包跨特殊符號及空格）");
+
+  while (Serial.available() == 0) {
+    delay(10);
+  }
+
+  ssid = Serial.readStringUntil('\n');
+  ssid.trim();
+
+  Serial.println("請輸入網路密碼");
+  while (Serial.available() == 0) {
+    delay(10);
+  }
+
+  password = Serial.readStringUntil('\n');
+  password.trim();
+
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid,password);
-  
+  WiFi.softAP(ssid.c_str(), password.c_str());
+
   Serial.println();
   Serial.print("Open: ");
   Serial.println(WiFi.softAPIP());
-  
-  server.on("/",[](){
-    server.send_P(200,"text/html",webpage);
+
+  server.on("/", []() {
+    server.send_P(200, "text/html", webpage);
   });
-  
-  server.on("/move",moveCar);
-  
-  server.on("/stop",[](){
+
+  server.on("/move", moveCar);
+
+  server.on("/stop", []() {
     stopCar();
-    server.send(200,"text/plain","STOP");
+    server.send(200, "text/plain", "STOP");
   });
-  
+
   server.begin();
-  
+
   Serial.println("Server started");
 }
 
 
 
-void loop()
-{
+void loop() {
   server.handleClient();
-  
+
   updateMotor();
-  
-  if(millis()-lastCommand > timeout)
-  {
-  stopCar();
+
+  if (millis() - lastCommand > timeout) {
+    stopCar();
   }
 }
