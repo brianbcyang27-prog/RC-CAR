@@ -59,12 +59,12 @@ void setMotor(int left, int right)
   left = constrain(left, -1023, 1023);
   right = constrain(right, -1023, 1023);
 
-  if(left > 0)
+  if (left > 0)
   {
     analogWrite(AIN1, left);
     digitalWrite(AIN2, LOW);
   }
-  else if(left < 0)
+  else if (left < 0)
   {
     digitalWrite(AIN1, LOW);
     analogWrite(AIN2, -left);
@@ -75,12 +75,12 @@ void setMotor(int left, int right)
     digitalWrite(AIN2, LOW);
   }
 
-  if(right > 0)
+  if (right > 0)
   {
     analogWrite(BIN1, right);
     digitalWrite(BIN2, LOW);
   }
-  else if(right < 0)
+  else if (right < 0)
   {
     digitalWrite(BIN1, LOW);
     analogWrite(BIN2, -right);
@@ -102,44 +102,44 @@ void stopCar()
 
 void updateMotor()
 {
-  if(currentLeft < targetLeft)
+  if (currentLeft < targetLeft)
     currentLeft += acceleration;
 
-  if(currentLeft > targetLeft)
+  if (currentLeft > targetLeft)
     currentLeft -= acceleration;
 
-  if(currentRight < targetRight)
+  if (currentRight < targetRight)
     currentRight += acceleration;
 
-  if(currentRight > targetRight)
+  if (currentRight > targetRight)
     currentRight -= acceleration;
 
-  currentLeft = constrain(currentLeft,-1023,1023);
-  currentRight = constrain(currentRight,-1023,1023);
+  currentLeft = constrain(currentLeft, -1023, 1023);
+  currentRight = constrain(currentRight, -1023, 1023);
 
-  setMotor(currentLeft,currentRight);
+  setMotor(currentLeft, currentRight);
 }
 
 
 void moveCar()
 {
-  if(server.hasArg("x") && server.hasArg("y"))
+  if (server.hasArg("x") && server.hasArg("y"))
   {
     int x = server.arg("x").toInt();
     int y = server.arg("y").toInt();
 
-    int forward = map(y,-100,100,-1023,1023);
-    int turn = map(x,-100,100,-500,500);
+    int forward = map(y, -100, 100, -1023, 1023);
+    int turn = map(x, -100, 100, -500, 500);
 
     targetLeft = forward - turn;
     targetRight = forward + turn;
 
-    targetLeft = constrain(targetLeft,-maxSpeed,maxSpeed);
-    targetRight = constrain(targetRight,-maxSpeed,maxSpeed);
+    targetLeft = constrain(targetLeft, -maxSpeed, maxSpeed);
+    targetRight = constrain(targetRight, -maxSpeed, maxSpeed);
 
     lastCommand = millis();
 
-    server.send(200,"text/plain","OK");
+    server.send(200, "text/plain", "OK");
   }
 }
 
